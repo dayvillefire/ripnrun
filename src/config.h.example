@@ -1,0 +1,21 @@
+/**
+ * RIPNRUN - @jbuchbinder
+ * 
+ * "Rip and run" software to operate an ESC-POS printer connected to an MQTT
+ * queue. Works with pocsag-monitor software for pager monitoring.
+ * 
+ * SETTINGS FILE
+ */
+
+// WiFi
+const char *ssid = "ssid";
+const char *password = "password";
+
+// MQTT Broker
+const char *mqtt_broker = "mqtt.one";
+const char *topic = "topic/subtopic";
+const char *mqtt_username = "user";
+const char *mqtt_password = "password";
+const int mqtt_port = 1883;
+
+const char *agency_name = "DAYVILLE FIRE COMPANY";

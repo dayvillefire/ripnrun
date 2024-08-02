@@ -1,0 +1,1 @@
+src/config.h filter=git-crypt diff=git-crypt
