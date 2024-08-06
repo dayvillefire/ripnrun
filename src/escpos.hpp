@@ -20,12 +20,17 @@
 #define ESCPOS_PRINTMODE_DOUBLEWIDTH 32
 #define ESCPOS_PRINTMODE_UNDERLINE 128
 
-String escpos_initialize();
-String escpos_align(int align);
-String escpos_feed(int lines);
-String escpos_char_width_height(int width, int height);
-String escpos_reverse_printing(bool on);
-String escpos_set_printmode(int printmode);
-String escpos_printimage(uint8_t *buffer, int width, int height);
+class EscPos
+{
+public:
+    EscPos();
+    String initialize();
+    String align(int align);
+    String feed(int lines);
+    String char_width_height(int width, int height);
+    String reverse_printing(bool on);
+    String set_printmode(int printmode);
+    String printimage(uint8_t *buffer, int width, int height);
+};
 
 #endif /* ESCPOS_HPP */

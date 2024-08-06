@@ -12,6 +12,7 @@
 
 WiFiClient espClient;
 PubSubClient client(espClient);
+EscPos esc;
 
 void pubSubCallback(char *topic, byte *raw, unsigned int length)
 {
@@ -22,14 +23,14 @@ void pubSubCallback(char *topic, byte *raw, unsigned int length)
     String payload = String();
 
     // Header
-    payload += escpos_set_printmode(ESCPOS_PRINTMODE_DOUBLEHEIGHT);
-    payload += escpos_align(ESCPOS_ALIGN_CENTER);
+    payload += esc.set_printmode(ESCPOS_PRINTMODE_DOUBLEHEIGHT);
+    payload += esc.align(ESCPOS_ALIGN_CENTER);
     payload += agency_name;
     payload += "\r\n";
     payload += "---------------------\r\n";
     payload += " \r\n";
-    payload += escpos_align(ESCPOS_ALIGN_LEFT);
-    payload += escpos_set_printmode(ESCPOS_PRINTMODE_OFF);
+    payload += esc.align(ESCPOS_ALIGN_LEFT);
+    payload += esc.set_printmode(ESCPOS_PRINTMODE_OFF);
 
     for (int i = 0; i < length; i++)
     {
@@ -39,11 +40,11 @@ void pubSubCallback(char *topic, byte *raw, unsigned int length)
     payload += "\r\n";
 
     // Footer
-    payload += escpos_align(ESCPOS_ALIGN_CENTER);
+    payload += esc.align(ESCPOS_ALIGN_CENTER);
     payload += "---------------------\r\n";
     payload += " \r\n";
     payload += " \r\n";
-    payload += escpos_align(ESCPOS_ALIGN_LEFT);
+    payload += esc.align(ESCPOS_ALIGN_LEFT);
 
     Serial.println();
     Serial.println("-----------------------");
@@ -99,7 +100,9 @@ void loop()
 {
     usbh_task();
     client.loop();
+#ifdef KEEPALIVE_PRINTER
     Serial.println(" - Keep alive printer");
-    printPayload(escpos_initialize());
+    printPayload(esc.initialize());
     delay(1000);
+#endif /* KEEPALIVE_PRINTER */
 }

@@ -1,14 +1,14 @@
 #include <Arduino.h>
 #include "escpos.hpp"
 
-String escpos_initialize()
+String EscPos::initialize()
 {
     String x = String();
     x += "\x1B@";
     return x;
 }
 
-String escpos_align(int align)
+String EscPos::align(int align)
 {
     String x = String();
     x += "\x1B\x61";
@@ -16,7 +16,7 @@ String escpos_align(int align)
     return x;
 }
 
-String escpos_feed(int lines)
+String EscPos::feed(int lines)
 {
     String x = String();
     x += "\x1B\x64";
@@ -24,7 +24,7 @@ String escpos_feed(int lines)
     return x;
 }
 
-String escpos_char_width_height(int width, int height)
+String EscPos::char_width_height(int width, int height)
 {
     String x = String();
     x += "\x1D\x21";
@@ -32,7 +32,7 @@ String escpos_char_width_height(int width, int height)
     return x;
 }
 
-String escpos_reverse_printing(bool on)
+String EscPos::reverse_printing(bool on)
 {
     String x = String();
     x += "\x1D\x42";
@@ -40,7 +40,7 @@ String escpos_reverse_printing(bool on)
     return x;
 }
 
-String escpos_set_printmode(int printmode)
+String EscPos::set_printmode(int printmode)
 {
     String x = String();
     x += "\x1B\x21";
@@ -48,7 +48,7 @@ String escpos_set_printmode(int printmode)
     return x;
 }
 
-String escpos_printimage(uint8_t *buffer, int width, int height)
+String EscPos::printimage(uint8_t *buffer, int width, int height)
 {
     int pitch = (width + 7) >> 3;
     uint8_t *x;
