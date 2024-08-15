@@ -20,36 +20,34 @@ void pubSubCallback(char *topic, byte *raw, unsigned int length)
     Serial.println(topic);
     Serial.print("Message:");
 
-    String payload = String();
-
     // Header
-    payload += esc.set_printmode(ESCPOS_PRINTMODE_DOUBLEHEIGHT);
-    payload += esc.align(ESCPOS_ALIGN_CENTER);
-    payload += agency_name;
-    payload += "\r\n";
-    payload += "---------------------\r\n";
-    payload += " \r\n";
-    payload += esc.align(ESCPOS_ALIGN_LEFT);
-    payload += esc.set_printmode(ESCPOS_PRINTMODE_OFF);
+    esc.set_printmode(ESCPOS_PRINTMODE_DOUBLEHEIGHT);
+    esc.align(ESCPOS_ALIGN_CENTER);
+    esc.text(agency_name);
+    esc.text("\r\n");
+    esc.text("---------------------\r\n");
+    esc.text(" \r\n");
+    esc.align(ESCPOS_ALIGN_LEFT);
+    esc.set_printmode(ESCPOS_PRINTMODE_OFF);
 
     for (int i = 0; i < length; i++)
     {
-        payload += (char)raw[i];
+        esc.text("" + (char)raw[i]);
         Serial.print((char)raw[i]);
     }
-    payload += "\r\n";
+    esc.text("\r\n");
 
     // Footer
-    payload += esc.align(ESCPOS_ALIGN_CENTER);
-    payload += "---------------------\r\n";
-    payload += " \r\n";
-    payload += " \r\n";
-    payload += esc.align(ESCPOS_ALIGN_LEFT);
+    esc.align(ESCPOS_ALIGN_CENTER);
+    esc.text("---------------------\r\n");
+    esc.text(" \r\n");
+    esc.text(" \r\n");
+    esc.align(ESCPOS_ALIGN_LEFT);
 
     Serial.println();
     Serial.println("-----------------------");
 
-    printPayload(payload);
+    esc.flush();
     // print("\n\x0a\x4a\x04");
 }
 

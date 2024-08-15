@@ -189,25 +189,3 @@ static void printer_transfer_cb(usb_transfer_t *transfer)
     }
 }
 
-/**
- * Passes a payload to the ESC POS printer. Seems to like the entire batch
- * at once rather than a per-command payload.
- */
-void printPayload(String aLine)
-{
-    if (PrinterOut == NULL)
-    {
-        Serial.print("Waiting for PrinterOut initialization ...");
-        while (PrinterOut == NULL)
-        {
-            Serial.print(".");
-            delay(100);
-            usbh_task();
-        }
-        Serial.println("");
-    }
-    PrinterOut->num_bytes = aLine.length();
-    memcpy(PrinterOut->data_buffer, aLine.c_str(), PrinterOut->num_bytes);
-    esp_err_t err = usb_host_transfer_submit(PrinterOut);
-}
-

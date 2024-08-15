@@ -1,65 +1,64 @@
 #include <Arduino.h>
 #include "escpos.hpp"
 
-String EscPos::initialize()
+extern usb_transfer_t *PrinterOut;
+
+EscPos::EscPos()
 {
-    String x = String();
-    x += "\x1B@";
-    return x;
+    buf = "";
 }
 
-String EscPos::align(int align)
+void EscPos::initialize()
 {
-    String x = String();
-    x += "\x1B\x61";
-    x += char(align);
-    return x;
+    buf += "\x1B@";
 }
 
-String EscPos::feed(int lines)
+void EscPos::align(int align)
 {
-    String x = String();
-    x += "\x1B\x64";
-    x += char(lines);
-    return x;
+    buf += "\x1B\x61";
+    buf += char(align);
 }
 
-String EscPos::char_width_height(int width, int height)
+void EscPos::feed(int lines)
 {
-    String x = String();
-    x += "\x1D\x21";
-    x += char(width | height);
-    return x;
+    buf += "\x1B\x64";
+    buf += char(lines);
 }
 
-String EscPos::reverse_printing(bool on)
+void EscPos::text(String text)
 {
-    String x = String();
-    x += "\x1D\x42";
-    x += char(on ? 1 : 0);
-    return x;
+    buf += text;
 }
 
-String EscPos::set_printmode(int printmode)
+void EscPos::char_width_height(int width, int height)
 {
-    String x = String();
-    x += "\x1B\x21";
-    x += char(printmode);
-    return x;
+    buf += "\x1D\x21";
+    buf += char(width | height);
 }
 
-String EscPos::printimage(uint8_t *buffer, int width, int height)
+void EscPos::reverse_printing(bool on)
+{
+    buf += "\x1D\x42";
+    buf += char(on ? 1 : 0);
+}
+
+void EscPos::set_printmode(int printmode)
+{
+    buf += "\x1B\x21";
+    buf += char(printmode);
+}
+
+void EscPos::printimage(uint8_t *buffer, int width, int height)
 {
     int pitch = (width + 7) >> 3;
     uint8_t *x;
 
-    String b = String();
-    b += "\x1Dv00";
+    buf += "\x1Dv00";
 
-    b += char((width + 7) >> 3);
-    b += char(0);
-    b += char((uint8_t)height);
-    b += char((uint8_t)(height >> 8));
+    buf += char((width + 7) >> 3);
+    buf += char(0);
+    buf += char((uint8_t)height);
+    buf += char((uint8_t)(height >> 8));
 
     // Print the graphics
     x = buffer;
@@ -67,10 +66,27 @@ String EscPos::printimage(uint8_t *buffer, int width, int height)
     {
         for (int i = 0; i < pitch; i++)
         {
-            b += char(*(x + i));
+            buf += char(*(x + i));
         }
         x += pitch;
     } // for y
+}
 
-    return b;
+void EscPos::flush()
+{
+    if (PrinterOut == NULL)
+    {
+        Serial.print("Waiting for PrinterOut initialization ...");
+        while (PrinterOut == NULL)
+        {
+            Serial.print(".");
+            delay(100);
+            usbh_task();
+        }
+        Serial.println("");
+    }
+    PrinterOut->num_bytes = buf.length();
+    memcpy(PrinterOut->data_buffer, buf.c_str(), PrinterOut->num_bytes);
+    esp_err_t err = usb_host_transfer_submit(PrinterOut);
+    buf = "";
 }

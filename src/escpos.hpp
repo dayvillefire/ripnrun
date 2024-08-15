@@ -2,6 +2,7 @@
 #define ESCPOS_HPP 1
 
 #include <Arduino.h>
+#include "usbhelp.hpp"
 
 #define ESCPOS_ALIGN_LEFT 48
 #define ESCPOS_ALIGN_CENTER 49
@@ -24,13 +25,17 @@ class EscPos
 {
 public:
     EscPos();
-    String initialize();
-    String align(int align);
-    String feed(int lines);
-    String char_width_height(int width, int height);
-    String reverse_printing(bool on);
-    String set_printmode(int printmode);
-    String printimage(uint8_t *buffer, int width, int height);
+    void flush();
+    void initialize();
+    void align(int align);
+    void feed(int lines);
+    void text(String text);
+    void char_width_height(int width, int height);
+    void reverse_printing(bool on);
+    void set_printmode(int printmode);
+    void printimage(uint8_t *buffer, int width, int height);
+private:
+    String buf = "";
 };
 
 #endif /* ESCPOS_HPP */
