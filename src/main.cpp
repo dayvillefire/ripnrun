@@ -6,13 +6,12 @@
 #include "escpos.hpp"
 
 #include <WiFi.h>
-#include <PubSubClient.h>
+#include <ESPPubSubClientWrapper.h>
 
 #include "config.h"
 
 WiFiClient espClient;
-PubSubClient client(espClient);
-EscPos esc;
+ESPPubSubClientWrapper client((const char *)mqtt_broker, mqtt_port);
 
 void pubSubCallback(char *topic, byte *raw, unsigned int length)
 {
@@ -70,34 +69,21 @@ void setup()
     // connecting to a mqtt broker
     client.setServer(mqtt_broker, mqtt_port);
     client.setCallback(pubSubCallback);
-    while (!client.connected())
-    {
-        String client_id = "esp32-client-";
-        client_id += String(WiFi.macAddress());
-        Serial.printf("The client %s connects to the public MQTT broker\n", client_id.c_str());
-        if (client.connect(client_id.c_str(), mqtt_username, mqtt_password))
-        {
-            Serial.println("Public EMQX MQTT broker connected");
-        }
-        else
-        {
-            Serial.print("Failed with state ");
-            Serial.print(client.state());
-            delay(2000);
-        }
-    }
+
+    String client_id = "esp32-client-";
+    client_id += String(WiFi.macAddress());
+    client.connect(client_id.c_str(), mqtt_username, mqtt_password);
+    Serial.println("- Subscribe to topic");
+    client.on(topic, pubSubCallback);
 
     usbh_setup(show_config_desc_full);
-
-    // Publish and subscribe
-    Serial.println("- Subscribe to topic");
-    client.subscribe(topic);
 }
 
 void loop()
 {
     usbh_task();
     client.loop();
+    delay(100);
 #ifdef KEEPALIVE_PRINTER
     Serial.println(" - Keep alive printer");
     printPayload(esc.initialize());
