@@ -6,9 +6,9 @@ The `src/config.h` file needs to be adjusted with your settings.
 
 ## Required Hardware
 
-* [ESP32 S3](https://www.amazon.com/dp/B0D4C7LJZX) - $18.99 for 3
-* [Receipt Printer](https://www.amazon.com/gp/product/B0CQCT2NXX/) - $47.99
-* [Power/Data USB C Splitter](https://www.amazon.com/dp/B0CB3M46Y5) - $12.99 
+* [ESP32-S3](https://www.amazon.com/dp/B0D4C7LJZX) - $18.99 for 3
+* [Receipt Printer](https://www.amazon.com/gp/product/B0BYMX55ZQ/) - $39.99
+* [USB C to USB B](https://www.amazon.com/dp/B0CZ34TJP7/) - $3.99
 * (optional) [Case](https://www.amazon.com/gp/product/B07Q11F7DS/) - $6.49 for 5
 
 You probably should have a USB micro power supply for the ESP32, as well.
@@ -17,5 +17,5 @@ You probably should have a USB micro power supply for the ESP32, as well.
 
 With PlatformIO installed, use this to build and upload, then monitor:
 
-`pio run -t upload && pio device monitor -b 115200`
+`make`
 
