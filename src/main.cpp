@@ -7,11 +7,13 @@
 
 #include <WiFi.h>
 #include <ESPPubSubClientWrapper.h>
+#include "config.hpp"
 
-#include "config.h"
+#define CONFIG_PIN 0
+#define WIFICHECK_INTERVAL 1000L
 
-WiFiClient espClient;
-ESPPubSubClientWrapper client((const char *)mqtt_broker, mqtt_port);
+ESPPubSubClientWrapper *client = nullptr;
+String agency_name;
 
 void pubSubCallback(char *topic, byte *raw, unsigned int length)
 {
@@ -31,7 +33,7 @@ void pubSubCallback(char *topic, byte *raw, unsigned int length)
     payload += escpos_align(ESCPOS_ALIGN_LEFT);
     payload += escpos_set_printmode(ESCPOS_PRINTMODE_OFF);
 
-    for (int i = 0; i < length; i++)
+    for (unsigned int i = 0; i < length; i++)
     {
         payload += (char)raw[i];
         Serial.print((char)raw[i]);
@@ -49,7 +51,49 @@ void pubSubCallback(char *topic, byte *raw, unsigned int length)
     Serial.println("-----------------------");
 
     printPayload(payload);
-    // print("\n\x0a\x4a\x04");
+}
+
+void connectWifi()
+{
+    String ssid = getWifiSsid();
+    String pass = getWifiPass();
+
+    if (ssid.length() == 0)
+    {
+        Serial.println(F("WiFi SSID not set, rebooting..."));
+        delay(1000);
+        ESP.restart();
+    }
+
+    WiFi.begin(ssid.c_str(), pass.c_str());
+
+    const unsigned long timeout_ms = 30000;
+    unsigned long start = millis();
+
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        if (millis() - start > timeout_ms)
+        {
+            Serial.println(F("\nWiFi connection timeout, rebooting..."));
+            delay(1000);
+            ESP.restart();
+        }
+        Serial.print(".");
+        delay(300);
+    }
+
+    Serial.print(" IP: ");
+    Serial.println(WiFi.localIP());
+    Serial.println();
+}
+
+void checkWifi()
+{
+    if ((WiFi.status() != WL_CONNECTED))
+    {
+        Serial.println(F("\nWiFi lost. Reconnecting..."));
+        connectWifi();
+    }
 }
 
 void setup()
@@ -59,35 +103,66 @@ void setup()
     while (!Serial)
         ; // wait for serial port to connect.
 
-    // Connecting to a WiFi network
-    WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED)
+    // GPIO 0 held LOW at boot -> config mode
+    pinMode(CONFIG_PIN, INPUT_PULLUP);
+    delay(50);
+    if (digitalRead(CONFIG_PIN) == LOW)
     {
-        delay(500);
-        Serial.println("Connecting to WiFi..");
+        Serial.println(F("\nEntering configuration mode..."));
+        delay(200); // debounce
+        configMenu(); // blocks until reboot
+        return;      // unreachable, but explicit
     }
-    Serial.println("Connected to the Wi-Fi network");
 
-    // connecting to a mqtt broker
-    client.setServer(mqtt_broker, mqtt_port);
-    client.setCallback(pubSubCallback);
+    // Reset connection
+    WiFi.disconnect();
+    delay(1000);
+
+    // Connecting to a WiFi network
+    connectWifi();
+
+    // Load agency name from storage
+    agency_name = getAgencyName();
+
+    // Create MQTT client
+    String broker = getMqttBroker();
+    int port = getMqttPort();
+    client = new ESPPubSubClientWrapper(broker.c_str(), port);
+
+    client->setServer(broker.c_str(), port);
+    client->setCallback(pubSubCallback);
 
     String client_id = "esp32-client-";
-    client_id += String(WiFi.macAddress());
-    client.connect(client_id.c_str(), mqtt_username, mqtt_password);
+    client_id += String((char *)WiFi.macAddress(NULL));
+    client->connect(client_id.c_str(),
+                    getMqttUser().c_str(),
+                    getMqttPass().c_str());
 
     usbh_setup(show_config_desc_full);
 
     // Publish and subscribe
     Serial.println("- Subscribe to topic");
-    client.on(topic, pubSubCallback);
+    client->on(getMqttTopic().c_str(), pubSubCallback);
     usbh_setup(show_config_desc_full);
+}
+
+void check_status()
+{
+    static uint32_t checkwifi_timeout = 0;
+    uint32_t current_millis = millis();
+
+    if ((current_millis > checkwifi_timeout) || (checkwifi_timeout == 0))
+    {
+        checkWifi();
+        checkwifi_timeout = current_millis + WIFICHECK_INTERVAL;
+    }
 }
 
 void loop()
 {
+    check_status();
     usbh_task();
-    client.loop();
+    if (client) client->loop();
     delay(100);
 #ifdef KEEPALIVE
     Serial.println(" - Keep alive printer");
